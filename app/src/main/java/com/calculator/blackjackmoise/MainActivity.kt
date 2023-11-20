@@ -32,26 +32,74 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.calculator.blackjackmoise.model.Routes
 import com.moise.cartas.Deck
+
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Deck.createDeck()
-        val player1 = Player()
-        Log.d("CardList",player1.cardsInHand.size.toString())
         setContent {
-            MultiplayerScreen(player1)
+            val navController = rememberNavController()
+            NavHost(navController = navController, startDestination = Routes.MainMenu.route){
+                composable(Routes.MainMenu.route){MainMenu(navController)}
+                composable(Routes.MultiplayerScreen.route){ MultiplayerScreen(navController) }
+            }
         }
     }
 }
 
 
 @Composable
+fun MainMenu(navController: NavController){
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Button(
+            modifier = Modifier
+                .padding(10.dp)
+                .height(60.dp)
+                .width(160.dp),
+            shape = RectangleShape,
+            colors = ButtonDefaults.buttonColors(Color.Black),onClick = {
+            navController.navigate(Routes.MultiplayerScreen.route)
+        }) {
+            Text(text = "Multiplayer")
+        }
+        Button(
+            modifier = Modifier
+                .padding(10.dp)
+                .height(60.dp)
+                .width(160.dp),
+            shape = RectangleShape,
+            colors = ButtonDefaults.buttonColors(Color.Black),onClick = { /*TODO*/ }) {
+            Text(text = "SinglePlayer")
+        }
+    }
+}
+
+@Composable
+fun MultiplayerScreen(navController: NavController){
+    val player1 = Player()
+    Multiplayer(player1)
+}
+
+
+
+
+@Composable
         /**
          * Function that generates the image of the card and the 2 buttons
          */
-fun MultiplayerScreen(player:Player){
+fun Multiplayer(player:Player){
     //variable that stores the card to be displayed
     val dealersCards by remember {  mutableStateOf(mutableListOf(getDealersCards())) }
     var playersCards by remember {  mutableStateOf(mutableListOf<Card>()) }
@@ -69,7 +117,7 @@ fun MultiplayerScreen(player:Player){
             horizontalArrangement = Arrangement.Center
         ) {
 
-            if (a ==2){
+            if (a <30){
                 ImageCreator(Card(PlayingCards.ace,Suits.spades,0,0,"backside"),155,245,0,0)
                 ImageCreator(dealersCards[0][1],150,250,-70,0)
             }else{
@@ -86,7 +134,9 @@ fun MultiplayerScreen(player:Player){
             }
         }
         Row (
-            modifier = Modifier.padding(top = 80.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(top = 80.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ){
@@ -103,7 +153,7 @@ fun MultiplayerScreen(player:Player){
                     //the selected card is the last card of the d
                     Log.d("CardList","In the button"+playersCards.toString())
                 }) {
-                Text(text = "New Card")
+                Text(text = "Hit")
             }
             Button(
                 modifier = Modifier
@@ -120,7 +170,7 @@ fun MultiplayerScreen(player:Player){
                     //And sets the selected card to default
 
                 }) {
-                Text(text = "Restart !")
+                Text(text = "Stand")
             }
         }
     }
@@ -131,7 +181,7 @@ fun PlayersCards(cards:MutableList<Card>){
     Log.d("CardList","In the function"+cards.toString())
     for (card in cards ){
         ImageCreator(card, 150 , 250 , counter, 0 )
-        counter+=50
+        counter+=40
     }
 }
 
