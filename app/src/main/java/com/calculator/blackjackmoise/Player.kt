@@ -11,17 +11,17 @@ class Player {
         tokens += amount
     }
 
-    fun startingHand(){
-        cardsInHand.add(Deck.giveCard())
-        cardsInHand.add(Deck.giveCard())
+    fun startingHand(): MutableList<Card> {
+        if (cardsInHand.isEmpty()){
+            cardsInHand.add(Deck.giveCard())
+            cardsInHand.add(Deck.giveCard())
+        }
+        return cardsInHand
     }
 
     fun hit(): MutableList<Card> {
-        if (cardsInHand.size == 0){
-            startingHand()
-        }else{
-            cardsInHand.add(Deck.giveCard())
-        }
+        cardsInHand.add(Deck.giveCard())
+
         return cardsInHand
     }
     fun checkPoints(){

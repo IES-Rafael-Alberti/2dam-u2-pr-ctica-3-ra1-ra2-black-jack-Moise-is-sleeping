@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -90,6 +92,7 @@ fun MainMenu(navController: NavController){
 @Composable
 fun MultiplayerScreen(navController: NavController){
     val player1 = Player()
+    Log.d("tokens","screen ${player1.tokens}")
     Multiplayer(player1)
 }
 
@@ -101,11 +104,13 @@ fun MultiplayerScreen(navController: NavController){
          * Function that generates the image of the card and the 2 buttons
          */
 fun Multiplayer(player:Player){
+
     //variable that stores the card to be displayed
     val dealersCards by remember {  mutableStateOf(mutableListOf(getDealersCards())) }
     var playersCards by remember {  mutableStateOf(mutableListOf<Card>()) }
     var hasBet  by remember {  mutableStateOf(false) }
     var a by remember {  mutableStateOf(  0)}
+    Log.d("tokens","multiplayer ${player.tokens}")
     Column (
         modifier = Modifier
             .fillMaxSize()
@@ -114,17 +119,22 @@ fun Multiplayer(player:Player){
 
 
     ){
+        Row {
+            Text(text = player.tokens.toString())
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
-
-            if (a <30){
+            if (a > 10){
+                 /*TODO*/
+            }
+            if (hasBet){
                 ImageCreator(Card(PlayingCards.ace,Suits.spades,0,0,"backside"),155,245,0,0)
                 ImageCreator(dealersCards[0][1],150,250,-70,0)
+                playersCards = player.startingHand()
             }else{
-                ImageCreator(dealersCards[0][0],155,245,0,0)
-                ImageCreator(dealersCards[0][1],150,250,-70,0)
+                ImageCreator(Card(PlayingCards.ace,Suits.spades,0,0,"backside"),155,245,0,0)
             }
 
         }
@@ -155,7 +165,7 @@ fun Multiplayer(player:Player){
                         playersCards = player.hit()
                         a+=1
                         //the selected card is the last card of the d
-                        Log.d("CardList","In the button"+playersCards.toString())
+
                     }) {
                     Text(text = "Hit")
                 }
@@ -178,7 +188,31 @@ fun Multiplayer(player:Player){
                 }
             }
         }else{
-            DisplayTokens()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                displayTokens(player)
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center){
+                Button(
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .height(60.dp)
+                        .width(160.dp),
+                    shape = RectangleShape,
+                    colors = ButtonDefaults.buttonColors(Color.Black),
+                    onClick = {
+                    hasBet = true
+                }) {
+                    Text(text = "Deal")
+                }
+            }
+
         }
 
     }
@@ -187,34 +221,36 @@ fun Multiplayer(player:Player){
 @Composable
 fun PlayersCards(cards:MutableList<Card>){
     var counter = 5
-    Log.d("CardList","In the function"+cards.toString())
     for (card in cards ){
         ImageCreator(card, 150 , 250 , counter, 0 )
         counter+=40
     }
 
 }
-@Preview
+
 @Composable
-fun DisplayTokens(){
+fun displayTokens(player: Player) {
     val tokens = listOf("pokerchip20","pokerchip50","pokerchip100")
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        for (token in tokens){
+
+
+        for (token in tokens) {
             Image(
                 painter = painterResource(id = getokenId(name = token)),
-                contentDescription ="Token",
+                contentDescription = "Token",
                 modifier = Modifier
+                    .clickable {
+                        player.addTotalTokens(
+                            token
+                                .substring(9)
+                                .toInt()
+                        )
+                        Log.d("tokens", "DisplayTokens ${player.tokens}")
+                    }
                     .height(90.dp)
                     .width(90.dp)
                     .padding(10.dp))
-        }
-        Button(onClick = { /*TODO*/ }) {
-            Text(text = "Deal")
-        }
-    }
 
+        }
 
 }
 
