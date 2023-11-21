@@ -5,6 +5,11 @@ import com.moise.cartas.Deck
 class Player {
     var cardsInHand = mutableListOf<Card>()
     var points = 0
+    var tokens = 0
+
+    fun addTotalTokens(amount : Int){
+        tokens += amount
+    }
 
     fun startingHand(){
         cardsInHand.add(Deck.giveCard())

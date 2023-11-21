@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -103,6 +104,7 @@ fun Multiplayer(player:Player){
     //variable that stores the card to be displayed
     val dealersCards by remember {  mutableStateOf(mutableListOf(getDealersCards())) }
     var playersCards by remember {  mutableStateOf(mutableListOf<Card>()) }
+    var hasBet  by remember {  mutableStateOf(false) }
     var a by remember {  mutableStateOf(  0)}
     Column (
         modifier = Modifier
@@ -126,55 +128,62 @@ fun Multiplayer(player:Player){
             }
 
         }
-        Row(
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Box{
-                PlayersCards(playersCards)
+        if (hasBet){
+            Row(modifier = Modifier
+                .height(260.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Box{
+                    PlayersCards(playersCards)
+                }
             }
-        }
-        Row (
-            modifier = Modifier
-                .padding(top = 80.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ){
-            Button(
+            Row (
                 modifier = Modifier
-                    .padding(10.dp)
-                    .height(60.dp)
-                    .width(160.dp),
-                shape = RectangleShape,
-                colors = ButtonDefaults.buttonColors(Color.Black),
-                onClick = {
-                    playersCards = player.hit()
-                    a+=1
-                    //the selected card is the last card of the d
-                    Log.d("CardList","In the button"+playersCards.toString())
-                }) {
-                Text(text = "Hit")
-            }
-            Button(
-                modifier = Modifier
-                    .padding(10.dp)
-                    .height(60.dp)
-                    .width(160.dp),
-                shape = RectangleShape,
-                colors = ButtonDefaults.buttonColors(Color.Black),
-                onClick = {
-                    //Clears the deck
-                    Deck.deck.cardList.clear()
-                    //And creates it again
-                    Deck.createDeck()
-                    //And sets the selected card to default
+                    .padding(top = 80.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ){
+                Button(
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .height(60.dp)
+                        .width(160.dp),
+                    shape = RectangleShape,
+                    colors = ButtonDefaults.buttonColors(Color.Black),
+                    onClick = {
+                        playersCards = player.hit()
+                        a+=1
+                        //the selected card is the last card of the d
+                        Log.d("CardList","In the button"+playersCards.toString())
+                    }) {
+                    Text(text = "Hit")
+                }
+                Button(
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .height(60.dp)
+                        .width(160.dp),
+                    shape = RectangleShape,
+                    colors = ButtonDefaults.buttonColors(Color.Black),
+                    onClick = {
+                        //Clears the deck
+                        Deck.deck.cardList.clear()
+                        //And creates it again
+                        Deck.createDeck()
+                        //And sets the selected card to default
 
-                }) {
-                Text(text = "Stand")
+                    }) {
+                    Text(text = "Stand")
+                }
             }
+        }else{
+            DisplayTokens()
         }
+
     }
 }
+
 @Composable
 fun PlayersCards(cards:MutableList<Card>){
     var counter = 5
@@ -183,6 +192,30 @@ fun PlayersCards(cards:MutableList<Card>){
         ImageCreator(card, 150 , 250 , counter, 0 )
         counter+=40
     }
+
+}
+@Preview
+@Composable
+fun DisplayTokens(){
+    val tokens = listOf("pokerchip20","pokerchip50","pokerchip100")
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        for (token in tokens){
+            Image(
+                painter = painterResource(id = getokenId(name = token)),
+                contentDescription ="Token",
+                modifier = Modifier
+                    .height(90.dp)
+                    .width(90.dp)
+                    .padding(10.dp))
+        }
+        Button(onClick = { /*TODO*/ }) {
+            Text(text = "Deal")
+        }
+    }
+
+
 }
 
 
@@ -196,6 +229,12 @@ fun PlayersCards(cards:MutableList<Card>){
 fun getCardId(card:Card): Int {
     val context = LocalContext.current
     val id = context.resources.getIdentifier(card.idDrawable, "drawable", context.packageName)
+    return id
+}
+@Composable
+fun getokenId(name:String): Int {
+    val context = LocalContext.current
+    val id = context.resources.getIdentifier(name, "drawable", context.packageName)
     return id
 }
 
