@@ -16,6 +16,7 @@ class Player {
             cardsInHand.add(Deck.giveCard())
             cardsInHand.add(Deck.giveCard())
         }
+        checkPoints()
         return cardsInHand
     }
 
@@ -24,10 +25,36 @@ class Player {
 
         return cardsInHand
     }
-    fun checkPoints(){
-        for (card in cardsInHand){
-            points+= card.maxPoint
+
+    fun winOrLose(): Int {
+        if (points==21){
+            return 1
         }
+        else if(points>21){
+            return -1
+        }else{
+            return 0
+        }
+    }
+    fun checkPoints(): Int {
+        val aces = mutableListOf<Card>()
+        points = 0
+        for (card in cardsInHand){
+            if(card.name.toString() !="ace"){
+                points+= card.maxPoint
+            }
+            else{
+                aces.add(card)
+            }
+        }
+        for (card in aces){
+            if (points <= 10){
+                points+=card.maxPoint
+            }else{
+                points+=card.minPoint
+            }
+        }
+        return points
     }
 
 }

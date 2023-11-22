@@ -1,5 +1,6 @@
 package com.calculator.blackjackmoise
 
+import android.graphics.Paint.Align
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -21,11 +22,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,8 +34,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -50,14 +52,14 @@ class MainActivity : ComponentActivity() {
         Deck.createDeck()
         setContent {
             val navController = rememberNavController()
+            val player1 = Player()
             NavHost(navController = navController, startDestination = Routes.MainMenu.route){
                 composable(Routes.MainMenu.route){MainMenu(navController)}
-                composable(Routes.MultiplayerScreen.route){ MultiplayerScreen(navController) }
+                composable(Routes.MultiplayerScreen.route){ MultiplayerScreen(navController,player1) }
             }
         }
     }
 }
-
 
 @Composable
 fun MainMenu(navController: NavController){
@@ -90,131 +92,172 @@ fun MainMenu(navController: NavController){
 }
 
 @Composable
-fun MultiplayerScreen(navController: NavController){
-    val player1 = Player()
-    Log.d("tokens","screen ${player1.tokens}")
-    Multiplayer(player1)
+fun MultiplayerScreen(navController: NavController,player: Player){
+    var tokens by rememberSaveable { mutableStateOf(0) }
+    var hasBet by rememberSaveable { mutableStateOf(false) }
+    var points by rememberSaveable { mutableStateOf(0) }
+    Column {
+        Row (modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp)){
+            if (hasBet){
+                Text(text = "Tokens : $tokens",
+                    fontSize = 20.sp,
+                    modifier = Modifier.padding(5.dp))
+                Text(text = "Points : $points",
+                    fontSize = 20.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(5.dp),
+                    textAlign = TextAlign.End)
+            }
+            else{
+                Text(text = "Tokens : $tokens",
+                    fontSize = 20.sp,
+                    modifier = Modifier.padding(5.dp))
+            }
+        }
+        if (!hasBet) {
+            Row (
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center){
+                ImageCreator(Card(PlayingCards.ace,Suits.spades,0,0,"backside"),155,245,0,0)
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                SelectTokens(player, hasBet,
+                    updateHasBet = { hasBet = true },
+                    updateTokens = { tokens += it })
+            }
+        } else {
+            Multiplayer(player,
+                updatePoints = {
+                    points = player.checkPoints()
+                })
+        }
+    }
 }
-
-
 
 
 @Composable
         /**
          * Function that generates the image of the card and the 2 buttons
          */
-fun Multiplayer(player:Player){
-
+fun Multiplayer(player:Player,updatePoints: (Int) -> Unit){
     //variable that stores the card to be displayed
     val dealersCards by remember {  mutableStateOf(mutableListOf(getDealersCards())) }
     var playersCards by remember {  mutableStateOf(mutableListOf<Card>()) }
-    var hasBet  by remember {  mutableStateOf(false) }
-    var a by remember {  mutableStateOf(  0)}
-    Log.d("tokens","multiplayer ${player.tokens}")
+    var points  by rememberSaveable {  mutableStateOf(0) }
     Column (
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White),
         verticalArrangement = Arrangement.Top,
-
-
     ){
-        Row {
-            Text(text = player.tokens.toString())
-        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
-            if (a > 10){
-                 /*TODO*/
-            }
-            if (hasBet){
-                ImageCreator(Card(PlayingCards.ace,Suits.spades,0,0,"backside"),155,245,0,0)
-                ImageCreator(dealersCards[0][1],150,250,-70,0)
-                playersCards = player.startingHand()
-            }else{
-                ImageCreator(Card(PlayingCards.ace,Suits.spades,0,0,"backside"),155,245,0,0)
-            }
 
+            ImageCreator(Card(PlayingCards.ace,Suits.spades,0,0,"backside"),155,245,0,0)
+            ImageCreator(dealersCards[0][1],150,250,-70,0)
+            playersCards = player.startingHand()
+            updatePoints(points)
         }
-        if (hasBet){
-            Row(modifier = Modifier
-                .height(260.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Box{
-                    PlayersCards(playersCards)
-                }
-            }
-            Row (
+        ShowCards(playersCards,
+            updatePlayersCards = {
+                playersCards = player.hit()
+                },
+            points,
+            updatePoints = {
+                updatePoints(points)
+            })
+    }
+}
+
+@Composable
+fun SelectTokens(player: Player, hasBet:Boolean, updateHasBet:(Boolean)->Unit,updateTokens :(Int)->Unit) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            DisplayTokens(player, updateTokenPoints = {
+                updateTokens( it)
+            })
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center){
+            Button(
                 modifier = Modifier
-                    .padding(top = 80.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ){
-                Button(
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .height(60.dp)
-                        .width(160.dp),
-                    shape = RectangleShape,
-                    colors = ButtonDefaults.buttonColors(Color.Black),
-                    onClick = {
-                        playersCards = player.hit()
-                        a+=1
-                        //the selected card is the last card of the d
-
-                    }) {
-                    Text(text = "Hit")
-                }
-                Button(
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .height(60.dp)
-                        .width(160.dp),
-                    shape = RectangleShape,
-                    colors = ButtonDefaults.buttonColors(Color.Black),
-                    onClick = {
-                        //Clears the deck
-                        Deck.deck.cardList.clear()
-                        //And creates it again
-                        Deck.createDeck()
-                        //And sets the selected card to default
-
-                    }) {
-                    Text(text = "Stand")
-                }
-            }
-        }else{
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                displayTokens(player)
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center){
-                Button(
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .height(60.dp)
-                        .width(160.dp),
-                    shape = RectangleShape,
-                    colors = ButtonDefaults.buttonColors(Color.Black),
-                    onClick = {
-                    hasBet = true
+                    .padding(10.dp)
+                    .height(60.dp)
+                    .width(160.dp),
+                shape = RectangleShape,
+                colors = ButtonDefaults.buttonColors(Color.Black),
+                onClick = {
+                    updateHasBet(hasBet)
+                    Log.d("Hasbet","selecttokens $hasBet")
                 }) {
-                    Text(text = "Deal")
-                }
+                Text(text = "Deal")
             }
-
         }
+    }
+}
 
+@Composable
+fun ShowCards(playersCards:MutableList<Card>, updatePlayersCards: (MutableList<Card>) -> Unit,points:Int,updatePoints:(Int)->Unit) {
+    Row(modifier = Modifier
+        .height(195.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box{
+            PlayersCards(playersCards)
+        }
+    }
+    Row (
+        modifier = Modifier
+            .padding(top = 80.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ){
+        Button(
+            modifier = Modifier
+                .padding(10.dp)
+                .height(60.dp)
+                .width(160.dp),
+            shape = RectangleShape,
+            colors = ButtonDefaults.buttonColors(Color.Black),
+            onClick = {
+                updatePlayersCards(playersCards)
+                updatePoints(points)
+                //the selected card is the last card of the d
+            }) {
+            Text(text = "Hit")
+        }
+        Button(
+            modifier = Modifier
+                .padding(10.dp)
+                .height(60.dp)
+                .width(160.dp),
+            shape = RectangleShape,
+            colors = ButtonDefaults.buttonColors(Color.Black),
+            onClick = {
+                //Clears the deck
+                Deck.deck.cardList.clear()
+                //And creates it again
+                Deck.createDeck()
+                //And sets the selected card to default
+
+            }) {
+            Text(text = "Stand")
+        }
     }
 }
 
@@ -226,13 +269,12 @@ fun PlayersCards(cards:MutableList<Card>){
         counter+=40
     }
 
+
 }
 
 @Composable
-fun displayTokens(player: Player) {
+fun DisplayTokens(player: Player,updateTokenPoints:(Int)->Unit) {
     val tokens = listOf("pokerchip20","pokerchip50","pokerchip100")
-
-
         for (token in tokens) {
             Image(
                 painter = painterResource(id = getokenId(name = token)),
@@ -244,6 +286,12 @@ fun displayTokens(player: Player) {
                                 .substring(9)
                                 .toInt()
                         )
+                        updateTokenPoints(
+                            token
+                                .substring(9)
+                                .toInt()
+                        )
+
                         Log.d("tokens", "DisplayTokens ${player.tokens}")
                     }
                     .height(90.dp)
@@ -251,7 +299,6 @@ fun displayTokens(player: Player) {
                     .padding(10.dp))
 
         }
-
 }
 
 
