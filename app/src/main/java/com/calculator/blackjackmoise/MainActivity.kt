@@ -1,6 +1,5 @@
 package com.calculator.blackjackmoise
 
-import android.graphics.Paint.Align
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -35,8 +34,10 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -50,12 +51,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Deck.createDeck()
+        var choosePlayer = 0
         setContent {
             val navController = rememberNavController()
-            val player1 = Player()
+            val player1 by rememberSaveable { mutableStateOf( Player()) }
+            val player2 by rememberSaveable { mutableStateOf( Player()) }
+
             NavHost(navController = navController, startDestination = Routes.MainMenu.route){
                 composable(Routes.MainMenu.route){MainMenu(navController)}
-                composable(Routes.MultiplayerScreen.route){ MultiplayerScreen(navController,player1) }
+                composable(Routes.MultiplayerScreen.route){ MultiplayerScreen(navController,player1,player2) }
+
             }
         }
     }
@@ -92,11 +97,21 @@ fun MainMenu(navController: NavController){
 }
 
 @Composable
-fun MultiplayerScreen(navController: NavController,player: Player){
+fun MultiplayerScreen(navController: NavController, player1: Player, player2: Player){
     var tokens by rememberSaveable { mutableStateOf(0) }
     var hasBet by rememberSaveable { mutableStateOf(false) }
     var points by rememberSaveable { mutableStateOf(0) }
-    Column {
+    var currentPlayer  by remember { mutableStateOf(Player())}
+    var whoseTurn by rememberSaveable { mutableStateOf(false) }
+
+    if (whoseTurn){
+        currentPlayer = player1
+    }else{
+        currentPlayer = player2
+    }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Row (modifier = Modifier
             .fillMaxWidth()
             .height(70.dp)){
@@ -117,6 +132,9 @@ fun MultiplayerScreen(navController: NavController,player: Player){
                     modifier = Modifier.padding(5.dp))
             }
         }
+        if (currentPlayer.winOrLoose() == -1){
+            Loose()
+        }
         if (!hasBet) {
             Row (
                 modifier = Modifier.fillMaxWidth(),
@@ -127,25 +145,43 @@ fun MultiplayerScreen(navController: NavController,player: Player){
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                SelectTokens(player, hasBet,
+                SelectTokens(currentPlayer, hasBet,
                     updateHasBet = { hasBet = true },
                     updateTokens = { tokens += it })
             }
         } else {
-            Multiplayer(player,
+            Multiplayer(currentPlayer,
                 updatePoints = {
-                    points = player.checkPoints()
+                    points = currentPlayer.checkPoints()
+                },
+                stand = {
+                    whoseTurn= true
                 })
         }
     }
 }
+@Preview
+@Composable
+fun Loose(){
+    Dialog(
+        onDismissRequest = { /*TODO*/ }
+    ) {
+        Image(
+            //uses the function getCardId to extract the id of the card
+            painter = painterResource(R.drawable.youloose2),
+            contentDescription = "image",
+            modifier = Modifier
+                .width(900.dp)
+                .height(800.dp))
 
+    }
+}
 
 @Composable
         /**
          * Function that generates the image of the card and the 2 buttons
          */
-fun Multiplayer(player:Player,updatePoints: (Int) -> Unit){
+fun Multiplayer(player:Player,updatePoints: (Int) -> Unit,stand: () -> Unit){
     //variable that stores the card to be displayed
     val dealersCards by remember {  mutableStateOf(mutableListOf(getDealersCards())) }
     var playersCards by remember {  mutableStateOf(mutableListOf<Card>()) }
@@ -173,7 +209,11 @@ fun Multiplayer(player:Player,updatePoints: (Int) -> Unit){
             points,
             updatePoints = {
                 updatePoints(points)
-            })
+            }, stand = {
+                stand()
+            }
+
+                    )
     }
 }
 
@@ -211,7 +251,7 @@ fun SelectTokens(player: Player, hasBet:Boolean, updateHasBet:(Boolean)->Unit,up
 }
 
 @Composable
-fun ShowCards(playersCards:MutableList<Card>, updatePlayersCards: (MutableList<Card>) -> Unit,points:Int,updatePoints:(Int)->Unit) {
+fun ShowCards(playersCards:MutableList<Card>, updatePlayersCards: (MutableList<Card>) -> Unit,points:Int,updatePoints:(Int)->Unit,stand:()->Unit) {
     Row(modifier = Modifier
         .height(195.dp),
         horizontalArrangement = Arrangement.Center
@@ -249,12 +289,7 @@ fun ShowCards(playersCards:MutableList<Card>, updatePlayersCards: (MutableList<C
             shape = RectangleShape,
             colors = ButtonDefaults.buttonColors(Color.Black),
             onClick = {
-                //Clears the deck
-                Deck.deck.cardList.clear()
-                //And creates it again
-                Deck.createDeck()
-                //And sets the selected card to default
-
+                stand()
             }) {
             Text(text = "Stand")
         }

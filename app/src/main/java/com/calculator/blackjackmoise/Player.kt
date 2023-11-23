@@ -26,7 +26,7 @@ class Player {
         return cardsInHand
     }
 
-    fun winOrLose(): Int {
+    fun winOrLoose(): Int {
         if (points==21){
             return 1
         }
@@ -48,7 +48,7 @@ class Player {
             }
         }
         for (card in aces){
-            if (points <= 10){
+            if (points < 10){
                 points+=card.maxPoint
             }else{
                 points+=card.minPoint
