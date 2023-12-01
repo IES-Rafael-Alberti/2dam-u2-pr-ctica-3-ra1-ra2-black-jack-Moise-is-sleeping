@@ -23,6 +23,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -38,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.MutableLiveData
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -54,8 +56,8 @@ class MainActivity : ComponentActivity() {
         var choosePlayer = 0
         setContent {
             val navController = rememberNavController()
-            val player1 by rememberSaveable { mutableStateOf( Player()) }
-            val player2 by rememberSaveable { mutableStateOf( Player()) }
+            val player1 = Player()
+            val player2 = Player()
 
             NavHost(navController = navController, startDestination = Routes.MainMenu.route){
                 composable(Routes.MainMenu.route){MainMenu(navController)}
@@ -95,19 +97,23 @@ fun MainMenu(navController: NavController){
         }
     }
 }
+@Composable
+fun ChangePlayer(){
+
+}
 
 @Composable
 fun MultiplayerScreen(navController: NavController, player1: Player, player2: Player){
-    var tokens by rememberSaveable { mutableStateOf(0) }
+    var tokens by rememberSaveable { mutableIntStateOf(0) }
     var hasBet by rememberSaveable { mutableStateOf(false) }
-    var points by rememberSaveable { mutableStateOf(0) }
-    var currentPlayer  by remember { mutableStateOf(Player())}
+    var points by rememberSaveable { mutableIntStateOf(0) }
+    var currentPlayer = MutableLiveData<Player>()
     var whoseTurn by rememberSaveable { mutableStateOf(false) }
 
     if (whoseTurn){
-        currentPlayer = player1
+        currentPlayer.value = player1
     }else{
-        currentPlayer = player2
+        currentPlayer.value= player2
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
@@ -132,7 +138,7 @@ fun MultiplayerScreen(navController: NavController, player1: Player, player2: Pl
                     modifier = Modifier.padding(5.dp))
             }
         }
-        if (currentPlayer.winOrLoose() == -1){
+        if (currentPlayer.value!!.winOrLoose() == -1){
             Loose()
         }
         if (!hasBet) {
@@ -145,17 +151,17 @@ fun MultiplayerScreen(navController: NavController, player1: Player, player2: Pl
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                SelectTokens(currentPlayer, hasBet,
+                SelectTokens(currentPlayer.value!!, hasBet,
                     updateHasBet = { hasBet = true },
                     updateTokens = { tokens += it })
             }
         } else {
-            Multiplayer(currentPlayer,
+            Multiplayer(currentPlayer.value!!,
                 updatePoints = {
-                    points = currentPlayer.checkPoints()
+                    points = currentPlayer.value!!.checkPoints()
                 },
                 stand = {
-                    whoseTurn= true
+                    whoseTurn = !whoseTurn
                 })
         }
     }
