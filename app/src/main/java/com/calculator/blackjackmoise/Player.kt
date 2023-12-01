@@ -2,10 +2,11 @@ package com.calculator.blackjackmoise
 
 import com.moise.cartas.Deck
 
-class Player {
+class Player(PLayernumber: Number) {
     var cardsInHand = mutableListOf<Card>()
     var points = 0
     var tokens = 0
+    var playerNumber = PLayernumber
 
     fun addTotalTokens(amount : Int){
         tokens += amount

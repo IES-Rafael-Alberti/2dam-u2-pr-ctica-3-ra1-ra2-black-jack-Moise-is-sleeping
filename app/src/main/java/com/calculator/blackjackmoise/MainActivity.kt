@@ -56,8 +56,8 @@ class MainActivity : ComponentActivity() {
         var choosePlayer = 0
         setContent {
             val navController = rememberNavController()
-            val player1 = Player()
-            val player2 = Player()
+            val player1 = Player(1)
+            val player2 = Player(2)
 
             NavHost(navController = navController, startDestination = Routes.MainMenu.route){
                 composable(Routes.MainMenu.route){MainMenu(navController)}
@@ -123,6 +123,9 @@ fun MultiplayerScreen(navController: NavController, player1: Player, player2: Pl
             .height(70.dp)){
             if (hasBet){
                 Text(text = "Tokens : $tokens",
+                    fontSize = 20.sp,
+                    modifier = Modifier.padding(5.dp))
+                Text(text = "Player ${currentPlayer.value!!.playerNumber}",
                     fontSize = 20.sp,
                     modifier = Modifier.padding(5.dp))
                 Text(text = "Points : $points",
@@ -191,7 +194,7 @@ fun Multiplayer(player:Player,updatePoints: (Int) -> Unit,stand: () -> Unit){
     //variable that stores the card to be displayed
     val dealersCards by remember {  mutableStateOf(mutableListOf(getDealersCards())) }
     var playersCards by remember {  mutableStateOf(mutableListOf<Card>()) }
-    var points  by rememberSaveable {  mutableStateOf(0) }
+    val points  by rememberSaveable {  mutableStateOf(0) }
     Column (
         modifier = Modifier
             .fillMaxSize()
