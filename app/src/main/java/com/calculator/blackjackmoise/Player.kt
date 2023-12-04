@@ -7,9 +7,11 @@ class Player(PLayernumber: Number) {
     var points = 0
     var tokens = 0
     var playerNumber = PLayernumber
+    var hasBet = false
+    var hasStood = false
 
     fun addTotalTokens(amount : Int){
-        tokens += amount
+        tokens += (amount)/2
     }
 
     fun startingHand(): MutableList<Card> {
@@ -37,6 +39,10 @@ class Player(PLayernumber: Number) {
             return 0
         }
     }
+    fun closesToWinning(): Int {
+        var difference = 21 - points
+        return difference
+    }
     fun checkPoints(): Int {
         val aces = mutableListOf<Card>()
         points = 0
@@ -56,6 +62,13 @@ class Player(PLayernumber: Number) {
             }
         }
         return points
+    }
+    fun reset(){
+        cardsInHand.clear()
+        points = 0
+        tokens = 0
+        hasBet = false
+        hasStood = false
     }
 
 }

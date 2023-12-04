@@ -90,6 +90,9 @@ class Deck {
             }
 
         }
+        fun resetDeck(){
+            deck.cardList.clear()
+        }
 
 
     }
