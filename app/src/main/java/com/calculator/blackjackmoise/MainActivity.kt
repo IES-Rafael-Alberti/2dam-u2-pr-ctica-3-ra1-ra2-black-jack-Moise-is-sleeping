@@ -81,13 +81,19 @@ fun MainMenu(navController: NavController){
             modifier = Modifier.fillMaxSize(),
         ) {
             Row (
-                modifier = Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.End){
+                modifier = Modifier.fillMaxWidth().padding(bottom = 40.dp),horizontalArrangement = Arrangement.End){
                 Image(painter = painterResource(id = R.drawable.settings),
                     contentDescription = "logo",
                     modifier = Modifier.width(90.dp))
             }
             Row (
-                modifier = Modifier.fillMaxWidth().padding(top = 100.dp),
+                modifier = Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.Center){
+                Image(painter = painterResource(id = R.drawable.blacktitle),
+                    contentDescription = "logo",
+                    modifier = Modifier.width(700.dp))
+            }
+            Row (
+                modifier = Modifier.fillMaxWidth().padding(top = 30.dp),
                 horizontalArrangement = Arrangement.Center
             ){
                 Image(painter = painterResource(id = R.drawable.logo),
@@ -176,6 +182,8 @@ fun MultiplayerScreen(navController: NavController, player1: Player, player2: Pl
     }
     var hasBet by rememberSaveable { mutableStateOf(false) }
     var gameOver by rememberSaveable { mutableStateOf(false) }
+    var color by rememberSaveable { mutableStateOf(0xff0000ff) }
+
     Log.d("GameOver",Deck.deck.cardList.size.toString())
 
     Box(
@@ -191,29 +199,41 @@ fun MultiplayerScreen(navController: NavController, player1: Player, player2: Pl
             Row (modifier = Modifier
                 .fillMaxWidth()
                 .height(70.dp)){
+                if (currentPlayer.value!!.playerNumber==1){
+                    color = 0xF77A0000
+                }else{
+                    color = 0xF700107A
+                }
                 if (currentPlayer.value!!.hasBet && !currentPlayer.value!!.hasStood && !gameOver){
                     Text(text = "Tokens : ${currentPlayer.value!!.tokens}",
-                        fontSize = 20.sp,
-                        modifier = Modifier.padding(5.dp))
-                    Text(text = "Player ${currentPlayer.value!!.playerNumber}",
-                        fontSize = 20.sp,
+                        fontSize = 26.sp,
                         modifier = Modifier.padding(5.dp),
-                        textAlign = TextAlign.Center)
+                        color = Color.White)
+                    Text(text = "Player ${currentPlayer.value!!.playerNumber}",
+                        fontSize = 26.sp,
+                        modifier = Modifier.padding(5.dp),
+                        textAlign = TextAlign.Center,
+                        color = Color(color = color)
+                    )
                     Text(text = "Points : $points",
-                        fontSize = 20.sp,
+                        fontSize = 26.sp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(5.dp),
-                        textAlign = TextAlign.End)
+                        textAlign = TextAlign.End,
+                        color = Color.White)
                 }
                 else if(!currentPlayer.value!!.hasBet && !currentPlayer.value!!.hasStood && !gameOver){
                     Text(text = "Tokens : $tokens",
-                        fontSize = 20.sp,
-                        modifier = Modifier.padding(5.dp))
-                    Text(text = "Player ${currentPlayer.value!!.playerNumber}",
-                        fontSize = 20.sp,
+                        fontSize = 26.sp,
                         modifier = Modifier.padding(5.dp),
-                        textAlign = TextAlign.Center)
+                        color = Color.White)
+                    Text(text = "Player ${currentPlayer.value!!.playerNumber}",
+                        fontSize = 26.sp,
+                        modifier = Modifier.padding(5.dp),
+                        textAlign = TextAlign.Center,
+                        color = Color(color=color)
+                    )
                 }
             }
 
