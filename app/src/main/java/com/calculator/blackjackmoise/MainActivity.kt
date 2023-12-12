@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,10 +18,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,7 +40,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -49,7 +50,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.calculator.blackjackmoise.model.Routes
 import com.moise.cartas.Deck
-
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
@@ -63,7 +65,7 @@ class MainActivity : ComponentActivity() {
 
             NavHost(navController = navController, startDestination = Routes.MainMenu.route){
                 composable(Routes.MainMenu.route){MainMenu(navController)}
-                composable(Routes.MultiplayerScreen.route){ MultiplayerScreen(navController,player1,player2) }
+                composable(Routes.MultiplayerScreen.route){ MultiplayerScreen(navController,player1,player2,false) }
 
             }
         }
@@ -81,7 +83,9 @@ fun MainMenu(navController: NavController){
             modifier = Modifier.fillMaxSize(),
         ) {
             Row (
-                modifier = Modifier.fillMaxWidth().padding(bottom = 40.dp),horizontalArrangement = Arrangement.End){
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 40.dp),horizontalArrangement = Arrangement.End){
                 Image(painter = painterResource(id = R.drawable.settings),
                     contentDescription = "logo",
                     modifier = Modifier.width(90.dp))
@@ -93,7 +97,9 @@ fun MainMenu(navController: NavController){
                     modifier = Modifier.width(700.dp))
             }
             Row (
-                modifier = Modifier.fillMaxWidth().padding(top = 30.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 30.dp),
                 horizontalArrangement = Arrangement.Center
             ){
                 Image(painter = painterResource(id = R.drawable.logo),
@@ -101,7 +107,9 @@ fun MainMenu(navController: NavController){
                     modifier = Modifier.width(250.dp))
             }
             Row (
-                modifier = Modifier.fillMaxWidth().padding(top = 100.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 100.dp),
                 horizontalArrangement = Arrangement.Center
             ){
                 Button(
@@ -133,34 +141,135 @@ fun MainMenu(navController: NavController){
 }
 
 @Composable
-fun gameOver(navController: NavController,player1: Player, player2: Player, ResetPlayers:()->Unit){
+fun gameOver(navController: NavController,player1: Player, player2: Player, nextRound:()->Unit){
     var winner by rememberSaveable { mutableIntStateOf(0) }
-    if (player1.winOrLoose() ==1 || player2.winOrLoose() ==-1){
-        winner = 1
-    }else if (player2.winOrLoose() ==1 || player1.winOrLoose() ==-1){
+    var draw by rememberSaveable { mutableStateOf(false) }
+    if (player2.winOrLoose() ==1 || player1.winOrLoose() ==-1){
+        player2.tokens += player1.tokens
+        player1.tokens = 0
         winner = 2
-    }else{
+    }else if (player2.winOrLoose() ==-1 || player1.winOrLoose() ==1){
+        player1.tokens += player2.tokens
+        player2.tokens = 0
+        winner = 1
+    }else if (player2.winOrLoose() ==-1 && player1.winOrLoose() ==-1){
+        draw = true
+    }else if (player2.winOrLoose() ==1 && player1.winOrLoose() ==1){
+        draw = true
+    }
+    else{
         if (player1.closesToWinning() < player2.closesToWinning()){
+            player1.tokens += player2.tokens
+            player2.tokens = 0
             winner =1
         }else{
+            player2.tokens += player1.tokens
+            player1.tokens = 0
             winner = 2
         }
     }
     Box() {
-        Column {
-            Row {
-                Text(text = "Player $winner wins")
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row (
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ){
+                if (draw){
+                    Text(text = "Draw !!",
+                        fontSize = 26.sp,
+                        modifier = Modifier.padding(5.dp),
+                        color = Color.White)
+                }else{
+                    Text(text = "Player $winner wins",
+                        fontSize = 26.sp,
+                        modifier = Modifier.padding(5.dp),
+                        color = Color.White)
+                }
             }
             Row {
-                Button(onClick = { /*TODO*/ }) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Player 1 cards",
+                            fontSize = 15.sp,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(5.dp, top = 20.dp),
+                            color = Color.White,
+                            textAlign = TextAlign.Start
+                        )
+
+                        Text(
+                            text = "Points: ${player1.points}",
+                            fontSize = 15.sp,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 10.dp, top = 20.dp),
+                            color = Color.White,
+                            textAlign = TextAlign.End
+                        )
+                    }
+                    LazyRow(){
+                        items(player1.cardsInHand) {
+                                item -> ImageCreator(card = item, width = 140, height = 180, offsetX = 0, offsetY = 0)
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Player 2 cards", fontSize = 15.sp, modifier = Modifier
+                                .weight(1f)
+                                .padding(5.dp, top = 20.dp),
+                            color = Color.White,
+                            textAlign = TextAlign.Start
+                        )
+
+                        Text(
+                            text = "Points: ${player2.points}", fontSize = 15.sp, modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 10.dp, top = 20.dp),
+                            color = Color.White,
+                            textAlign = TextAlign.End
+                        )
+                    }
+                    LazyRow(){
+                        items(player2.cardsInHand) {
+                                item -> ImageCreator(card = item, width = 140, height = 180, offsetX = 0, offsetY = 0)
+                        }
+                        Log.d("player2",player2.cardsInHand.size.toString())
+                    }
+                }
+            }
+            Row(modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 40.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Center) {
+                Button(modifier = Modifier
+                    .padding(10.dp)
+                    .height(60.dp)
+                    .width(160.dp),
+                    shape = RectangleShape,
+                    colors = ButtonDefaults.buttonColors(Color.Black),onClick = {
+                        nextRound()
+                    }) {
                     Text(text = "Play Again")
 
                 }
-                Button(onClick = {
+                Button(modifier = Modifier
+                    .padding(10.dp)
+                    .height(60.dp)
+                    .width(160.dp),
+                    shape = RectangleShape,
+                    colors = ButtonDefaults.buttonColors(Color.Black),onClick = {
                     navController.navigate(Routes.MainMenu.route)
+                        player1.fullReset()
+                        player2.fullReset()
                 }) {
                     Text(text = "Exit")
-                    ResetPlayers()
 
                 }
             }
@@ -170,17 +279,20 @@ fun gameOver(navController: NavController,player1: Player, player2: Player, Rese
 }
 
 @Composable
-fun MultiplayerScreen(navController: NavController, player1: Player, player2: Player){
+fun MultiplayerScreen(navController: NavController, player1: Player, player2: Player,hasBet: Boolean){
+    var playAgain by rememberSaveable { mutableStateOf(false) }
     var tokens by rememberSaveable { mutableIntStateOf(0) }
     var points by rememberSaveable { mutableIntStateOf(0) }
     val currentPlayer = MutableLiveData<Player>()
     var whoseTurn by rememberSaveable { mutableStateOf(true) }
+    player1.startingHand()
+    player2.startingHand()
     if (whoseTurn){
         currentPlayer.value = player1
     }else{
         currentPlayer.value= player2
     }
-    var hasBet by rememberSaveable { mutableStateOf(false) }
+    var hasBet by rememberSaveable { mutableStateOf(hasBet) }
     var gameOver by rememberSaveable { mutableStateOf(false) }
     var color by rememberSaveable { mutableStateOf(0xff0000ff) }
 
@@ -200,9 +312,9 @@ fun MultiplayerScreen(navController: NavController, player1: Player, player2: Pl
                 .fillMaxWidth()
                 .height(70.dp)){
                 if (currentPlayer.value!!.playerNumber==1){
-                    color = 0xF77A0000
+                    color = 0xFF0030DB
                 }else{
-                    color = 0xF700107A
+                    color = 0xF7E40000
                 }
                 if (currentPlayer.value!!.hasBet && !currentPlayer.value!!.hasStood && !gameOver){
                     Text(text = "Tokens : ${currentPlayer.value!!.tokens}",
@@ -237,14 +349,19 @@ fun MultiplayerScreen(navController: NavController, player1: Player, player2: Pl
                 }
             }
 
+            Log.d("hasbet",hasBet.toString())
 
-
-            if (currentPlayer.value!!.winOrLoose() == -1){
+            if (currentPlayer.value!!.winOrLoose() == -1 || currentPlayer.value!!.winOrLoose() == 1){
                 gameOver = true
-                gameOver(navController,player1, player2 , ResetPlayers = {
-                    player1.reset()
-                    player2.reset()
+                gameOver(navController,player1, player2 , nextRound = {
+                    player1.semiReset()
+                    player2.semiReset()
+                   playAgain = true
+
                 })
+            }
+            if (playAgain){
+                MultiplayerScreen(navController , player1 , player2,true  )
             }
 
 
@@ -280,17 +397,21 @@ fun MultiplayerScreen(navController: NavController, player1: Player, player2: Pl
                 Multiplayer(currentPlayer.value!!,
                     updatePoints = {
                         points = currentPlayer.value!!.checkPoints()
+
                     },
                     stand = {
                         currentPlayer.value!!.hasStood = true
                         whoseTurn = !whoseTurn
+                    }, changeTurn = {
+                        whoseTurn = !whoseTurn
                     })
+
                 tokens= 0
             }
             else{
-                gameOver(navController,player1, player2,ResetPlayers = {
-                    player1.reset()
-                    player2.reset()})
+                gameOver(navController,player1, player2, nextRound = {
+                    player1.semiReset()
+                    player2.semiReset()})
             }
         }
     }
@@ -303,27 +424,13 @@ fun MultiplayerScreen(navController: NavController, player1: Player, player2: Pl
 
 
 
-@Composable
-fun Loose(){
-    Dialog(
-        onDismissRequest = { /*TODO*/ }
-    ) {
-        Image(
-            //uses the function getCardId to extract the id of the card
-            painter = painterResource(R.drawable.youloose2),
-            contentDescription = "image",
-            modifier = Modifier
-                .width(900.dp)
-                .height(800.dp))
 
-    }
-}
 
 @Composable
         /**
          * Function that generates the image of the card and the 2 buttons
          */
-fun Multiplayer(player:Player,updatePoints: (Int) -> Unit,stand: () -> Unit){
+fun Multiplayer(player:Player,updatePoints: (Int) -> Unit,stand: () -> Unit,changeTurn: () -> Unit){
     //variable that stores the card to be displayed
     val dealersCards by remember {  mutableStateOf(mutableListOf(getDealersCards())) }
     var playersCards by remember {  mutableStateOf(mutableListOf<Card>()) }
@@ -352,6 +459,8 @@ fun Multiplayer(player:Player,updatePoints: (Int) -> Unit,stand: () -> Unit){
                 updatePoints(points)
             }, stand = {
                 stand()
+            }, changeTurn = {
+                changeTurn()
             }
 
                     )
@@ -392,7 +501,8 @@ fun SelectTokens(player: Player, hasBet:Boolean, updateHasBet:(Boolean)->Unit,up
 }
 
 @Composable
-fun ShowCards(playersCards:MutableList<Card>, updatePlayersCards: (MutableList<Card>) -> Unit,points:Int,updatePoints:(Int)->Unit,stand:()->Unit) {
+fun ShowCards(playersCards:MutableList<Card>, updatePlayersCards: (MutableList<Card>) -> Unit,points:Int,updatePoints:(Int)->Unit,stand:()->Unit,changeTurn:()->Unit) {
+    var delay by rememberSaveable {  mutableStateOf( false)}
     Row(modifier = Modifier
         .height(195.dp),
         horizontalArrangement = Arrangement.Center
@@ -418,9 +528,18 @@ fun ShowCards(playersCards:MutableList<Card>, updatePlayersCards: (MutableList<C
             onClick = {
                 updatePlayersCards(playersCards)
                 updatePoints(points)
-                //the selected card is the last card of the d
+                delay = true
+
             }) {
             Text(text = "Hit")
+        }
+        if (delay){
+            Delay (changeTurn = {
+                changeTurn()
+                delay = false
+                Log.d("changeClicked",delay.toString())
+            })
+
         }
         Button(
             modifier = Modifier
@@ -438,14 +557,23 @@ fun ShowCards(playersCards:MutableList<Card>, updatePlayersCards: (MutableList<C
 }
 
 @Composable
+fun Delay(changeTurn: () -> Unit){
+    LaunchedEffect(Unit) {
+
+        launch {
+            delay(600)
+            changeTurn()
+        }
+    }
+}
+
+@Composable
 fun PlayersCards(cards:MutableList<Card>){
     var counter = 5
     for (card in cards ){
         ImageCreator(card, 150 , 250 , counter, 0 )
         counter+=40
     }
-
-
 }
 
 @Composable

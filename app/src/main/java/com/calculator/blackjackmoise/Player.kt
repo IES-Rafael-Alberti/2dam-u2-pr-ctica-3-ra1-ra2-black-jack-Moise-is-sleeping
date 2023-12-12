@@ -55,7 +55,7 @@ class Player(PLayernumber: Number) {
             }
         }
         for (card in aces){
-            if (points < 10){
+            if (points <= 10){
                 points+=card.maxPoint
             }else{
                 points+=card.minPoint
@@ -63,10 +63,16 @@ class Player(PLayernumber: Number) {
         }
         return points
     }
-    fun reset(){
+    fun fullReset(){
         cardsInHand.clear()
         points = 0
         tokens = 0
+        hasBet = false
+        hasStood = false
+    }
+    fun semiReset(){
+        cardsInHand.clear()
+        points = 0
         hasBet = false
         hasStood = false
     }
