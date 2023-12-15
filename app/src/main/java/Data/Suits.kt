@@ -1,4 +1,4 @@
-package com.calculator.blackjackmoise
+package Data
 
 enum class Suits {
     hearts,diamonds,clubs,spades

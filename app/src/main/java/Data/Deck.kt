@@ -1,9 +1,4 @@
-package com.moise.cartas
-
-import android.util.Log
-import com.calculator.blackjackmoise.Card
-import com.calculator.blackjackmoise.PlayingCards
-import com.calculator.blackjackmoise.Suits
+package Data
 
 
 /**
@@ -86,10 +81,13 @@ class Deck {
             }
             //otherwise it send the back of the card
             else{
-                return Card(PlayingCards.ace,Suits.spades,0,0,"backside")
+                return Card(PlayingCards.ace, Suits.spades,0,0,"backside")
             }
 
         }
+        /**
+         * Clears the deck
+         */
         fun resetDeck(){
             deck.cardList.clear()
         }

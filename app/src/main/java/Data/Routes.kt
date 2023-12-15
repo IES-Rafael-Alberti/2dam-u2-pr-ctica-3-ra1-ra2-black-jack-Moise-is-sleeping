@@ -1,7 +1,7 @@
-package com.calculator.blackjackmoise.model
+package Data
 
 sealed class Routes(val route : String) {
-    object Player1 : Routes("Player 1")
+    object SinglePlayerScreen : Routes("SinglePlayerScreen")
     object MultiplayerScreen : Routes("MultiplayerScreen")
     object MainMenu : Routes("MainMenu")
 

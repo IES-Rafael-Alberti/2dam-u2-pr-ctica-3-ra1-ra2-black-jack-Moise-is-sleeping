@@ -1,6 +1,6 @@
 package com.calculator.blackjackmoise.ui.theme
 
-import com.calculator.blackjackmoise.Card
+import Data.Card
 
 class Dealer {
     var cardsInHand = mutableListOf<Card>()
